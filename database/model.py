@@ -53,7 +53,7 @@ def upsert_user_email(pool, user_id, email):
     """
     execute_update_query(
         pool,
-        queries.set_user_subscribe,
+        queries.set_user_email,
         user_id=user_id,
         email=email
     )

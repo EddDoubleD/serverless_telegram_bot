@@ -54,39 +54,35 @@ def handle_start_register(message, bot, pool):
 
 @logged_execution
 def handle_email(message, bot, pool):
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        valid = validate(
-            email_address=data,
-            check_format=True,
-            check_blacklist=True,
-            check_dns=True,
-            dns_timeout=10,
-            check_smtp=False,
-            smtp_debug=False
-        )
-        if not valid:
-            bot.send_message(
-                message.chat.id,
-                texts.EMAIL,
-                reply_markup=keyboards.EMPTY,
-            )
-            return
+    valid = validate(
+        email_address=message.text,
+        check_format=True,
+        check_blacklist=True,
+        check_dns=True,
+        dns_timeout=10,
+        check_smtp=False,
+        smtp_debug=False
+    )
 
-        db_model.upsert_user_email(
-            pool,
-            user_id=message.from_user.id,
-            email=data
-        )
-
-        # SUBSCRIBE
+    if not valid:
         bot.send_message(
             message.chat.id,
-            texts.SUBSCRIBE,
-            reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
+            texts.INVALID_EMAIL,
+            reply_markup=keyboards.EMPTY,
         )
-        bot.set_state(
-            message.from_user.id, states.RegisterState.subscribe, message.chat.id
-        )
+        return
+
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["email"] = message.text
+
+    bot.send_message(
+        message.chat.id,
+        texts.SUBSCRIBE,
+        reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
+    )
+    bot.set_state(
+        message.from_user.id, states.RegisterState.subscribe, message.chat.id
+    )
 
 
 @logged_execution
@@ -98,10 +94,22 @@ def handle_finish_register(message, bot, pool):
             reply_markup=keyboards.EMPTY,
         )
         return
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        email = data["email"]
+
+    db_model.upsert_user_email(
+        pool,
+        user_id=message.from_user.id,
+        email=email
+    )
+
+    subscribe = texts.YES_NO_OPTIONS[message.text]
+
     # save subscriber status
     db_model.upsert_user_subscribe(
+        pool=pool,
         user_id=message.from_user.id,
-        subscribe=texts.YES_NO_OPTIONS[message.text]
+        subscribe=subscribe
     )
 
     bot.send_message(

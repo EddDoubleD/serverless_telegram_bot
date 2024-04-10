@@ -24,7 +24,7 @@ NOT_REGISTERED = "You are not registered yet, try /register."
 CANCEL_REGISTER = "Cancelled! Your data is not saved."
 
 DELETE_ACCOUNT = "Are you sure you want to delete your account?"
-YES_NO_OPTIONS = {"Yes!": True, "No..": False}
+YES_NO_OPTIONS = {"Да!": True, "Нет..": False}
 DELETE_ACCOUNT_UNKNOWN = "I don't understand this command."
 DELETE_ACCOUNT_DONE = "Done! You can /register again."
 DELETE_ACCOUNT_CANCEL = "Ok, stay for longer!"
