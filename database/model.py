@@ -23,6 +23,51 @@ def clear_state(pool, user_id):
     execute_update_query(pool, queries.set_user_state, user_id=user_id, state=None)
 
 
+def add_primary_user_info(pool, user_id, chat_id, username, first_name, last_name):
+    """
+    Adds record to database about the user from the telegram stuf
+    @param pool: ydb pool
+    @param user_id: user id
+    @param chat_id: current chat id
+    @param username: login from telegram
+    @param first_name: name
+    @param last_name: surname
+    """
+    execute_update_query(
+        pool,
+        queries.add_primary_user_info,
+        user_id=user_id,
+        chat_id=chat_id,
+        username=username,
+        first_name=first_name,
+        last_name=last_name
+    )
+
+
+def upsert_user_email(pool, user_id, email):
+    """
+    Set user email to record by user_id
+    @param pool: ydb pool
+    @param user_id: user id
+    @param email: valid email
+    """
+    execute_update_query(
+        pool,
+        queries.set_user_subscribe,
+        user_id=user_id,
+        email=email
+    )
+
+
+def upsert_user_subscribe(pool, user_id, subscribe):
+    execute_update_query(
+        pool,
+        queries.set_user_subscribe,
+        user_id=user_id,
+        subscribe=subscribe
+    )
+
+
 def add_user_info(pool, user_id, first_name, last_name, age):
     execute_update_query(
         pool,

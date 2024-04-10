@@ -5,8 +5,6 @@ from telebot import TeleBot, custom_filters
 from bot import handlers as handlers
 from bot import states as bot_states
 
-# import tests.handlers as test_handlers
-
 
 class Handler:
     def __init__(self, callback, **kwargs):
@@ -44,6 +42,14 @@ def get_registration_handlers():
     ]
 
 
+def get_new_registration_handlers():
+    return [
+        Handler(callback=handlers.handle_start_register, commands=["register"]),
+        Handler(callback=handlers.handle_email, state=bot_states.RegisterState.email),
+        Handler(callback=handlers.handle_finish_register, state=bot_states.RegisterState.subscribe)
+    ]
+
+
 def get_show_data_handlers():
     return [
         Handler(callback=handlers.handle_show_data, commands=["show_data"]),
@@ -66,7 +72,8 @@ def create_bot(bot_token, pool):
 
     handlers = []
     handlers.extend(get_start_handlers())
-    handlers.extend(get_registration_handlers())
+    # handlers.extend(get_registration_handlers())
+    handlers.extend(get_new_registration_handlers())
     handlers.extend(get_show_data_handlers())
     handlers.extend(get_delete_account_handlers())
 

@@ -1,3 +1,5 @@
+from email_validate import validate
+
 from bot import keyboards, states
 from database import model as db_model
 from logs import logged_execution
@@ -6,7 +8,111 @@ from user_interaction import texts
 
 @logged_execution
 def handle_start(message, bot, pool):
-    bot.send_message(message.chat.id, texts.START, reply_markup=keyboards.EMPTY)
+    user = db_model.get_user_info(pool, message.from_user.id)
+    # user
+    if user:
+        bot.send_message(message.chat.id, texts.HELLO, reply_markup=keyboards.EMPTY)
+    else:
+        save_primary(pool, message)
+        bot.set_state(
+            message.from_user.id, states.RegisterState.guest, message.chat.id
+        )
+
+        bot.send_message(message.chat.id, texts.HELLO, reply_markup=keyboards.EMPTY)
+
+
+def save_primary(pool, message):
+    db_model.add_primary_user_info(
+        pool,
+        message.from_user.id,
+        message.chat.id,
+        message.from_user.username,
+        message.from_user.first_name,
+        message.from_user.last_name,
+    )
+
+
+@logged_execution
+def handle_start_register(message, bot, pool):
+    state = db_model.get_state(pool, message.from_user.id)
+    if state == 'guest':
+        bot.send_message(message.chat.id, 'Уже зерегистрированы', reply_markup=keyboards.EMPTY)
+        return
+    elif state is None:
+        save_primary(pool, message)
+
+    bot.send_message(
+        message.chat.id,
+        texts.EMAIL,
+        reply_markup=keyboards.EMPTY,
+    )
+
+    bot.set_state(
+        message.from_user.id, states.RegisterState.email, message.chat.id
+    )
+
+
+@logged_execution
+def handle_email(message, bot, pool):
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        valid = validate(
+            email_address=data,
+            check_format=True,
+            check_blacklist=True,
+            check_dns=True,
+            dns_timeout=10,
+            check_smtp=False,
+            smtp_debug=False
+        )
+        if not valid:
+            bot.send_message(
+                message.chat.id,
+                texts.EMAIL,
+                reply_markup=keyboards.EMPTY,
+            )
+            return
+
+        db_model.upsert_user_email(
+            pool,
+            user_id=message.from_user.id,
+            email=data
+        )
+
+        # SUBSCRIBE
+        bot.send_message(
+            message.chat.id,
+            texts.SUBSCRIBE,
+            reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
+        )
+        bot.set_state(
+            message.from_user.id, states.RegisterState.subscribe, message.chat.id
+        )
+
+
+@logged_execution
+def handle_finish_register(message, bot, pool):
+    if message.text not in texts.YES_NO_OPTIONS:
+        bot.send_message(
+            message.chat.id,
+            texts.DELETE_ACCOUNT_UNKNOWN,
+            reply_markup=keyboards.EMPTY,
+        )
+        return
+    # save subscriber status
+    db_model.upsert_user_subscribe(
+        user_id=message.from_user.id,
+        subscribe=texts.YES_NO_OPTIONS[message.text]
+    )
+
+    bot.send_message(
+        message.chat.id,
+        texts.FINISH_REGISTRATION,
+        reply_markup=keyboards.EMPTY,
+    )
+
+    bot.set_state(
+        message.from_user.id, states.RegisterState.finish, message.chat.id
+    )
 
 
 @logged_execution
@@ -125,7 +231,7 @@ def handle_delete_account(message, bot, pool):
     bot.send_message(
         message.chat.id,
         texts.DELETE_ACCOUNT,
-        reply_markup=keyboards.get_reply_keyboard(texts.DELETE_ACCOUNT_OPTIONS),
+        reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
     )
     bot.set_state(
         message.from_user.id, states.DeleteAccountState.are_you_sure, message.chat.id
@@ -136,7 +242,7 @@ def handle_delete_account(message, bot, pool):
 def handle_finish_delete_account(message, bot, pool):
     bot.delete_state(message.from_user.id, message.chat.id)
 
-    if message.text not in texts.DELETE_ACCOUNT_OPTIONS:
+    if message.text not in texts.YES_NO_OPTIONS:
         bot.send_message(
             message.chat.id,
             texts.DELETE_ACCOUNT_UNKNOWN,
@@ -144,7 +250,7 @@ def handle_finish_delete_account(message, bot, pool):
         )
         return
 
-    if texts.DELETE_ACCOUNT_OPTIONS[message.text]:
+    if texts.YES_NO_OPTIONS[message.text]:
         db_model.delete_user_info(pool, message.from_user.id)
         bot.send_message(
             message.chat.id,

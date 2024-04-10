@@ -86,6 +86,10 @@ class StateYDBStorage(StateStorageBase):
 
 
 class RegisterState(StatesGroup):
+    guest = State()
+    email = State()
+    subscribe = State()
+    finish = State()
     first_name = State()
     last_name = State()
     age = State()
