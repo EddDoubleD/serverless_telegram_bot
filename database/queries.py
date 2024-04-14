@@ -63,22 +63,10 @@ add_primary_user_info = f"""
     DECLARE $username AS Utf8;
     DECLARE $first_name AS Utf8;
     DECLARE $last_name AS Utf8;
+    $now = CurrentUtcDatetime();
 
-    INSERT INTO `{USERS_INFO_TABLE_PATH}` (user_id, chat_id, username, first_name, last_name)
-    VALUES ($user_id, $chat_id, $username, $first_name, $last_name);
-"""
-
-add_user_info = f"""
-    DECLARE $user_id AS Uint64;
-    DECLARE $chat_id AS Uint64;
-    DECLARE username AS Utf8;
-    DECLARE $first_name AS Utf8;
-    DECLARE $last_name AS Utf8;
-    DECLARE $email AS Utf8;
-    DECLARE $subscribe AS Bool;
-
-    INSERT INTO `{USERS_INFO_TABLE_PATH}` (user_id, username, first_name, last_name, email, subscribe)
-    VALUES ($user_id, $username, $first_name, $last_name, $email, $subscribe);
+    INSERT INTO `{USERS_INFO_TABLE_PATH}` (`user_id`, `chat_id`, `username`, `first_name`, `last_name`, 
+    `registration_date`) VALUES ($user_id, $chat_id, $username, $first_name, $last_name, $now);
 """
 
 delete_user_info = f"""

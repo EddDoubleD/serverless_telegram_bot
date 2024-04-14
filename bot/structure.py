@@ -20,31 +20,15 @@ def get_start_handlers():
 
 def get_registration_handlers():
     return [
-        Handler(callback=handlers.handle_register, commands=["register"]),
+        Handler(callback=handlers.handle_start_register, commands=["register"]),
         Handler(
             callback=handlers.handle_cancel_registration,
             commands=["cancel"],
             state=[
-                bot_states.RegisterState.first_name,
-                bot_states.RegisterState.last_name,
-                bot_states.RegisterState.age,
+                bot_states.RegisterState.email,
+                bot_states.RegisterState.subscribe
             ],
         ),
-        Handler(
-            callback=handlers.handle_get_first_name,
-            state=bot_states.RegisterState.first_name,
-        ),
-        Handler(
-            callback=handlers.handle_get_last_name,
-            state=bot_states.RegisterState.last_name,
-        ),
-        Handler(callback=handlers.handle_get_age, state=bot_states.RegisterState.age),
-    ]
-
-
-def get_new_registration_handlers():
-    return [
-        Handler(callback=handlers.handle_start_register, commands=["register"]),
         Handler(callback=handlers.handle_email, state=bot_states.RegisterState.email),
         Handler(callback=handlers.handle_finish_register, state=bot_states.RegisterState.subscribe)
     ]
@@ -52,17 +36,24 @@ def get_new_registration_handlers():
 
 def get_show_data_handlers():
     return [
-        Handler(callback=handlers.handle_show_data, commands=["show_data"]),
+        Handler(callback=handlers.handle_show_data, commands=["show"]),
     ]
 
 
 def get_delete_account_handlers():
     return [
-        Handler(callback=handlers.handle_delete_account, commands=["delete_account"]),
+        Handler(callback=handlers.handle_delete_account, commands=["delete"]),
         Handler(
             callback=handlers.handle_finish_delete_account,
             state=bot_states.DeleteAccountState.are_you_sure,
         ),
+    ]
+
+
+def get_info_handlers():
+    return [
+        Handler(callback=handlers.handle_about_info, commands=["about"]),
+        Handler(callback=handlers.handle_stand_info, commands=["stand"])
     ]
 
 
@@ -72,10 +63,10 @@ def create_bot(bot_token, pool):
 
     handlers = []
     handlers.extend(get_start_handlers())
-    # handlers.extend(get_registration_handlers())
-    handlers.extend(get_new_registration_handlers())
+    handlers.extend(get_registration_handlers())
     handlers.extend(get_show_data_handlers())
     handlers.extend(get_delete_account_handlers())
+    handlers.extend(get_info_handlers())
 
     for handler in handlers:
         bot.register_message_handler(

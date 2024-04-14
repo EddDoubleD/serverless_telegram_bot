@@ -89,7 +89,7 @@ class RegisterState(StatesGroup):
     guest = State()
     email = State()
     subscribe = State()
-    finish = State()
+    registered = State()
     first_name = State()
     last_name = State()
     age = State()

@@ -7,6 +7,7 @@
     `first_name` Utf8,
     `email` Utf8,
     `subscribe` Bool,
+    `registration_date` Datetime,
     PRIMARY KEY (`user_id`)
   );
 

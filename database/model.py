@@ -33,6 +33,11 @@ def add_primary_user_info(pool, user_id, chat_id, username, first_name, last_nam
     @param first_name: name
     @param last_name: surname
     """
+    #
+    if first_name is None:
+        first_name = ""
+    if last_name is None:
+        first_name = ""
     execute_update_query(
         pool,
         queries.add_primary_user_info,
@@ -65,17 +70,6 @@ def upsert_user_subscribe(pool, user_id, subscribe):
         queries.set_user_subscribe,
         user_id=user_id,
         subscribe=subscribe
-    )
-
-
-def add_user_info(pool, user_id, first_name, last_name, age):
-    execute_update_query(
-        pool,
-        queries.add_user_info,
-        user_id=user_id,
-        first_name=first_name,
-        last_name=last_name,
-        age=age,
     )
 
 

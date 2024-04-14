@@ -15,10 +15,33 @@ def handle_start(message, bot, pool):
     else:
         save_primary(pool, message)
         bot.set_state(
-            message.from_user.id, states.RegisterState.guest, message.chat.id
+            message.from_user.id,
+            states.RegisterState.guest,
+            message.chat.id
         )
 
         bot.send_message(message.chat.id, texts.HELLO, reply_markup=keyboards.EMPTY)
+
+
+@logged_execution
+def handle_start_register(message, bot, pool):
+    state = db_model.get_state(pool, message.from_user.id)
+    if state == states.RegisterState.guest:
+        bot.send_message(message.chat.id, 'Вы уже зерегистрированы', reply_markup=keyboards.EMPTY)
+        return
+    elif state is None:
+        save_primary(pool, message)
+
+    bot.send_message(
+        message.chat.id,
+        texts.EMAIL_MSG,
+        reply_markup=keyboards.get_reply_keyboard(["/cancel"]),
+        # reply_markup=keyboards.EMPTY,
+    )
+
+    bot.set_state(
+        message.from_user.id, states.RegisterState.email, message.chat.id
+    )
 
 
 def save_primary(pool, message):
@@ -29,26 +52,6 @@ def save_primary(pool, message):
         message.from_user.username,
         message.from_user.first_name,
         message.from_user.last_name,
-    )
-
-
-@logged_execution
-def handle_start_register(message, bot, pool):
-    state = db_model.get_state(pool, message.from_user.id)
-    if state == 'guest':
-        bot.send_message(message.chat.id, 'Уже зерегистрированы', reply_markup=keyboards.EMPTY)
-        return
-    elif state is None:
-        save_primary(pool, message)
-
-    bot.send_message(
-        message.chat.id,
-        texts.EMAIL,
-        reply_markup=keyboards.EMPTY,
-    )
-
-    bot.set_state(
-        message.from_user.id, states.RegisterState.email, message.chat.id
     )
 
 
@@ -77,7 +80,7 @@ def handle_email(message, bot, pool):
 
     bot.send_message(
         message.chat.id,
-        texts.SUBSCRIBE,
+        texts.SUBSCRIBE_MSG,
         reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
     )
     bot.set_state(
@@ -119,91 +122,16 @@ def handle_finish_register(message, bot, pool):
     )
 
     bot.set_state(
-        message.from_user.id, states.RegisterState.finish, message.chat.id
-    )
-
-
-@logged_execution
-def handle_register(message, bot, pool):
-    current_data = db_model.get_user_info(pool, message.from_user.id)
-
-    if current_data:
-        bot.send_message(
-            message.chat.id,
-            texts.ALREADY_REGISTERED.format(
-                current_data["first_name"],
-                current_data["last_name"],
-                current_data["age"],
-            ),
-            reply_markup=keyboards.EMPTY,
-        )
-        return
-
-    bot.send_message(
-        message.chat.id,
-        texts.FIRST_NAME,
-        reply_markup=keyboards.get_reply_keyboard(["/cancel"]),
-    )
-    bot.set_state(
-        message.from_user.id, states.RegisterState.first_name, message.chat.id
+        message.from_user.id, states.RegisterState.registered, message.chat.id
     )
 
 
 @logged_execution
 def handle_cancel_registration(message, bot, pool):
-    bot.delete_state(message.from_user.id, message.chat.id)
+    bot.set_state(message.from_user.id, states.RegisterState.guest, message.chat.id)
     bot.send_message(
         message.chat.id,
         texts.CANCEL_REGISTER,
-        reply_markup=keyboards.EMPTY,
-    )
-
-
-@logged_execution
-def handle_get_first_name(message, bot, pool):
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["first_name"] = message.text
-    bot.set_state(message.from_user.id, states.RegisterState.last_name, message.chat.id)
-    bot.send_message(
-        message.chat.id,
-        texts.LAST_NAME,
-        reply_markup=keyboards.get_reply_keyboard(["/cancel"]),
-    )
-
-
-@logged_execution
-def handle_get_last_name(message, bot, pool):
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["last_name"] = message.text
-    bot.set_state(message.from_user.id, states.RegisterState.age, message.chat.id)
-    bot.send_message(
-        message.chat.id,
-        texts.AGE,
-        reply_markup=keyboards.get_reply_keyboard(["/cancel"]),
-    )
-
-
-@logged_execution
-def handle_get_age(message, bot, pool):
-    if not message.text.isdigit():
-        bot.send_message(
-            message.chat.id,
-            texts.AGE_IS_NOT_NUMBER,
-            reply_markup=keyboards.EMPTY,
-        )
-        return
-
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        first_name = data["first_name"]
-        last_name = data["last_name"]
-        age = int(message.text)
-
-    bot.delete_state(message.from_user.id, message.chat.id)
-    db_model.add_user_info(pool, message.from_user.id, first_name, last_name, age)
-
-    bot.send_message(
-        message.chat.id,
-        texts.DATA_IS_SAVED.format(first_name, last_name, age),
         reply_markup=keyboards.EMPTY,
     )
 
@@ -221,7 +149,7 @@ def handle_show_data(message, bot, pool):
     bot.send_message(
         message.chat.id,
         texts.SHOW_DATA_WITH_PREFIX.format(
-            current_data["first_name"], current_data["last_name"], current_data["age"]
+            current_data["first_name"], current_data["last_name"]
         ),
         reply_markup=keyboards.EMPTY,
     )
@@ -271,3 +199,21 @@ def handle_finish_delete_account(message, bot, pool):
             texts.DELETE_ACCOUNT_CANCEL,
             reply_markup=keyboards.EMPTY,
         )
+
+
+@logged_execution
+def handle_about_info(message, bot, pool):
+    bot.send_message(
+        message.chat.id,
+        texts.ABOUT_INFO,
+        reply_markup=keyboards.EMPTY,
+    )
+
+
+@logged_execution
+def handle_stand_info(message, bot, pool):
+    bot.send_message(
+        message.chat.id,
+        texts.STAND_INFO,
+        reply_markup=keyboards.EMPTY,
+    )
