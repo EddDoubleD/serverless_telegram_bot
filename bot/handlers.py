@@ -217,3 +217,19 @@ def handle_stand_info(message, bot, pool):
         texts.STAND_INFO,
         reply_markup=keyboards.EMPTY,
     )
+
+
+@logged_execution
+def handle_admin(message, bot, pool):
+    if message.from_user.username not in texts.ADMINS:
+        return
+
+    current_data = db_model.get_random_user(pool)
+
+    bot.send_message(
+            message.chat.id,
+            f'Победил ${current_data["username"]} чтобы отправить победителю подарок напиши сообщение /gift username',
+            reply_markup=keyboards.EMPTY,
+    )
+
+    ## нужно ли сообщение остальным что розигрыш закончен

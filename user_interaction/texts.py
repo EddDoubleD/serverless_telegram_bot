@@ -36,3 +36,9 @@ STAND_INFO = (
 GUEST = 'guest'
 EMAIL = 'email'
 SUBSCRIBE = 'subscribe'
+
+
+ADMINS = [
+    'klebadev',
+    'edddoubled'
+]

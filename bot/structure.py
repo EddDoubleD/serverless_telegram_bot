@@ -56,6 +56,10 @@ def get_info_handlers():
         Handler(callback=handlers.handle_stand_info, commands=["stand"])
     ]
 
+def get_admin_handlers():
+    return [
+        Handler(callback=handlers.handle_admin, commands=["admin"]),
+    ]
 
 def create_bot(bot_token, pool):
     state_storage = bot_states.StateYDBStorage(pool)
@@ -67,6 +71,7 @@ def create_bot(bot_token, pool):
     handlers.extend(get_show_data_handlers())
     handlers.extend(get_delete_account_handlers())
     handlers.extend(get_info_handlers())
+    handlers.extend(get_admin_handlers())
 
     for handler in handlers:
         bot.register_message_handler(

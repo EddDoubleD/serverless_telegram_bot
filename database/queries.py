@@ -78,3 +78,11 @@ delete_user_info = f"""
     DELETE FROM `{STATES_TABLE_PATH}`
     WHERE user_id == $user_id;
 """
+
+
+get_random_user = f"""
+    SELECT `user_personal_info`.*, Random(username) as random
+    FROM `user_personal_info`
+    ORDER BY random
+    LIMIT 1
+"""
