@@ -90,9 +90,7 @@ class RegisterState(StatesGroup):
     email = State()
     subscribe = State()
     registered = State()
-    first_name = State()
-    last_name = State()
-    age = State()
+    winner = State()
 
 
 class DeleteAccountState(StatesGroup):
