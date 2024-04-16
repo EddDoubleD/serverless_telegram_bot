@@ -228,8 +228,7 @@ def handle_admin_help(message, bot, pool):
 
     bot.send_message(
             message.chat.id,
-            f'''
-                /admin_roulette - розыгрыш
+            f'''/admin_roulette - розыгрыш
                 /admin_gift <login> - отправка приза
                 /admin_send_message <login> <message> - отправить сообщение от имени бота
             ''',
@@ -254,7 +253,7 @@ def handle_admin_gift(message, bot, pool):
     if message.from_user.username not in texts.ADMINS:
         return
 
-    login = message[len('/admin_gift '):]
+    login = message.text[len('/admin_gift '):]
     current_data = db_model.get_user_info_by_username(pool, login)
 
     if current_data is None:
@@ -275,7 +274,7 @@ def handle_admin_send_message(message, bot, pool):
     if message.from_user.username not in texts.ADMINS:
             return
 
-    login, text = message[len('/admin_send_message '):].split(" ", 1)
+    login, text = message.text[len('/admin_send_message '):].split(" ", 1)
     current_data = db_model.get_user_info_by_username(pool, login)
 
     if current_data is None:

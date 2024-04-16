@@ -49,7 +49,7 @@ get_user_info = f"""
 """
 
 get_user_info_by_username = f"""
-    DECLARE $user_id AS Utf8;
+    DECLARE $username AS Utf8;
 
     SELECT
         *
