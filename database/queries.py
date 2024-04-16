@@ -48,6 +48,15 @@ get_user_info = f"""
     WHERE user_id == $user_id;
 """
 
+get_user_info_by_username = f"""
+    DECLARE $user_id AS Utf8;
+
+    SELECT
+        *
+    FROM `{USERS_INFO_TABLE_PATH}`
+    WHERE username == $username;
+"""
+
 get_chat_id = f"""
     DECLARE $user_id AS Int64;
     
@@ -81,8 +90,9 @@ delete_user_info = f"""
 
 
 get_random_user = f"""
-    SELECT `user_personal_info`.*, Random(username) as random
-    FROM `user_personal_info`
+    SELECT `{USERS_INFO_TABLE_PATH}`.*, Random(username) as random
+    FROM `{USERS_INFO_TABLE_PATH}`
+    WHERE email IS NOT NULL
     ORDER BY random
     LIMIT 1
 """

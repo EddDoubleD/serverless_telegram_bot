@@ -58,7 +58,10 @@ def get_info_handlers():
 
 def get_admin_handlers():
     return [
-        Handler(callback=handlers.handle_admin, commands=["admin"]),
+        Handler(callback=handlers.handle_admin_help, commands=["admin_help"]),
+        Handler(callback=handlers.handle_admin_roulette, commands=["admin_roulette"]),
+        Handler(callback=handlers.handle_admin_gift, commands=["admin_gift"]),
+        Handler(callback=handlers.handle_admin_send_message, commands=["admin_send_message"]),
     ]
 
 def create_bot(bot_token, pool):
