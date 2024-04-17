@@ -217,3 +217,75 @@ def handle_stand_info(message, bot, pool):
         texts.STAND_INFO,
         reply_markup=keyboards.EMPTY,
     )
+
+
+# ============================================= ADMIN ================================================
+
+@logged_execution
+def handle_admin_help(message, bot, pool):
+    if message.from_user.username not in texts.ADMINS:
+        return
+
+    bot.send_message(
+            message.chat.id,
+            f'''/admin_roulette - розыгрыш
+                /admin_gift <login> - отправка приза
+                /admin_send_message <login> <message> - отправить сообщение от имени бота
+            ''',
+            reply_markup=keyboards.EMPTY,
+    )
+
+@logged_execution
+def handle_admin_roulette(message, bot, pool):
+    if message.from_user.username not in texts.ADMINS:
+        return
+
+    current_data = db_model.get_random_user(pool)
+
+    bot.send_message(
+            message.chat.id,
+            f'Победил @{current_data["username"]} чтобы отправить победителю подарок напиши сообщение /admin_gift <login>',
+            reply_markup=keyboards.EMPTY,
+    )
+
+@logged_execution
+def handle_admin_gift(message, bot, pool):
+    if message.from_user.username not in texts.ADMINS:
+        return
+
+    login = message.text[len('/admin_gift '):]
+    current_data = db_model.get_user_info_by_username(pool, login)
+
+    if current_data is None:
+        bot.send_message(
+            message.chat.id,
+            f'Пользователь "{login}" не найден',
+            reply_markup=keyboards.EMPTY,
+        )
+    else:
+        bot.send_message(
+            current_data["chat_id"],
+            f'Поздравляю ты выграл приз. Подходи на стенд Яндекс 360 чтобы забрать его',
+            reply_markup=keyboards.EMPTY,
+        )
+
+@logged_execution
+def handle_admin_send_message(message, bot, pool):
+    if message.from_user.username not in texts.ADMINS:
+            return
+
+    login, text = message.text[len('/admin_send_message '):].split(" ", 1)
+    current_data = db_model.get_user_info_by_username(pool, login)
+
+    if current_data is None:
+        bot.send_message(
+            message.chat.id,
+            f'Пользователь "{login}" не найден',
+            reply_markup=keyboards.EMPTY,
+        )
+    else:
+        bot.send_message(
+            current_data["chat_id"],
+            text,
+            reply_markup=keyboards.EMPTY,
+        )
