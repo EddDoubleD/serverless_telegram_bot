@@ -92,6 +92,7 @@ class GlobalState(StatesGroup):
 
 
 class RegisterState(StatesGroup):
+    request_interest = State()
     guest = State()
     request_name = State()
     request_exp = State()

@@ -18,6 +18,10 @@ def get_start_handlers():
             callback=handlers.handle_start, commands=["start"]
         ),  # -> description
         Handler(
+            callback=handlers.handle_register_interest,
+            state=[bot_states.RegisterState.request_interest]
+        ),  # -> request_name
+        Handler(
             callback=handlers.handle_register_exp,
             state=[bot_states.RegisterState.request_name]
         ),  # -> subscribe
@@ -41,6 +45,10 @@ def get_prize_handlers():
         Handler(
             callback=handlers.handle_base_flow,
             state=[bot_states.GlobalState.guest]
+        ),
+        Handler(
+            callback=handlers.handle_participate_user,
+            state=[bot_states.GlobalState.participate,]
         )
     ]
 
@@ -66,38 +74,6 @@ def get_info_handlers():
     ]
 
 
-def get_registration_handlers():
-    return [
-        Handler(callback=handlers.handle_start_register, commands=["register"]),
-        Handler(
-            callback=handlers.handle_cancel_registration,
-            commands=["cancel"],
-            state=[
-                bot_states.RegisterState.email,
-                bot_states.RegisterState.subscribe
-            ],
-        ),
-        Handler(callback=handlers.handle_email, state=bot_states.RegisterState.email),
-        Handler(callback=handlers.handle_finish_register, state=bot_states.RegisterState.subscribe)
-    ]
-
-
-def get_show_data_handlers():
-    return [
-        Handler(callback=handlers.handle_show_data, commands=["show"]),
-    ]
-
-
-def get_delete_account_handlers():
-    return [
-        Handler(callback=handlers.handle_delete_account, commands=["delete"]),
-        Handler(
-            callback=handlers.handle_finish_delete_account,
-            state=bot_states.DeleteAccountState.are_you_sure,
-        ),
-    ]
-
-
 def get_admin_handlers():
     return [
         Handler(callback=handlers.handle_admin_help, commands=["admin_help"]),
@@ -113,10 +89,7 @@ def create_bot(bot_token, pool):
 
     handlers = []
     handlers.extend(get_start_handlers())
-    # handlers.extend(get_registration_handlers())
-    # handlers.extend(get_show_data_handlers())
     handlers.extend(get_prize_handlers())
-    handlers.extend(get_delete_account_handlers())
     handlers.extend(get_info_handlers())
     handlers.extend(get_admin_handlers())
 

@@ -14,9 +14,26 @@ def handle_start(message, bot, pool):
         bot.send_message(
             message.chat.id,
             texts.HELLO,
-            reply_markup=keyboards.EMPTY
+            reply_markup=keyboards.get_reply_keyboard(["Интересно!"]),
+            parse_mode="Markdown"
         )
 
+        bot.set_state(
+            message.from_user.id, states.RegisterState.request_interest, message.chat.id
+        )
+        return
+
+    bot.send_message(
+        message.chat.id,
+        texts.HELLO,
+        reply_markup=keyboards.EMPTY,
+        parse_mode="Markdown"
+    )
+
+
+@logged_execution
+def handle_register_interest(message, bot, pool):
+    if message.text == "Интересно!":
         bot.send_message(
             message.chat.id,
             texts.INTRODUCE_YOURSELF,
@@ -26,13 +43,6 @@ def handle_start(message, bot, pool):
         bot.set_state(
             message.from_user.id, states.RegisterState.request_name, message.chat.id
         )
-        return
-
-    bot.send_message(
-        message.chat.id,
-        texts.HELLO,
-        reply_markup=keyboards.EMPTY
-    )
 
 
 @logged_execution
@@ -78,8 +88,9 @@ def handle_register_subscribe(message, bot, pool):
 
     bot.send_message(
         message.chat.id,
-        texts.SUBSCRIBE_MSG,
+        texts.INTRODUCE_SUBSCRIBE,
         reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
+        parse_mode="Markdown"
     )
 
     bot.set_state(
@@ -105,7 +116,7 @@ def handle_register_email(message, bot, pool):
         bot.send_message(
             message.chat.id,
             texts.FINISH_REGISTRATION,
-            reply_markup=keyboards.EMPTY
+            reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
         )
 
         bot.set_state(
@@ -157,7 +168,7 @@ def handle_register_validate(message, bot, pool):
     bot.send_message(
         message.chat.id,
         texts.FINISH_REGISTRATION,
-        reply_markup=keyboards.EMPTY,
+        reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
     )
 
     bot.set_state(
@@ -174,7 +185,7 @@ def handle_base_flow(message, bot, pool):
                 message.chat.id,
                 texts.PARTICIPATE,
                 reply_markup=keyboards.get_reply_keyboard(
-                    ["Участвовать", "Команда", "Стенд"]
+                    ["Команда", "Стенд"]
                 )
             )
             bot.set_state(
@@ -182,26 +193,42 @@ def handle_base_flow(message, bot, pool):
                 states.GlobalState.participate,
                 message.chat.id
             )
-
-    state = db_model.get_state(pool, message.from_user.id)
-    if state == states.GlobalState.participate:
-        bot.send_message(
-            message.chat.id,
-            texts.PARTICIPATE,
-            reply_markup=keyboards.get_reply_keyboard(
-                ["Команда", "Стенд"]
+        elif command == 'team':
+            bot.send_message(
+                message.chat.id,
+                texts.ABOUT_INFO,
+                reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
             )
-        )
+        elif command == 'info':
+            bot.send_message(
+                message.chat.id,
+                texts.STAND_INFO,
+                reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
+            )
+        else:
+            bot.send_message(
+                message.chat.id,
+                "Я тебя не понимаю :(",
+                reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
+            )
 
-        return
 
-    bot.send_message(
-        message.chat.id,
-        texts.PARTICIPATE,
-        reply_markup=keyboards.get_reply_keyboard(
-            ["Участвовать", "Команда", "Стенд"]
-        )
-    )
+@logged_execution
+def handle_participate_user(message, bot, pool):
+    if message.text in texts.BASE_OPTIONS:
+        command = texts.BASE_OPTIONS[message.text]
+        if command == 'team':
+            bot.send_message(
+                message.chat.id,
+                texts.ABOUT_INFO,
+                reply_markup=keyboards.get_reply_keyboard(["Команда", "Стенд"])
+            )
+        elif command == 'info':
+            bot.send_message(
+                message.chat.id,
+                texts.STAND_INFO,
+                reply_markup=keyboards.get_reply_keyboard(["Команда", "Стенд"])
+            )
 
 
 @logged_execution

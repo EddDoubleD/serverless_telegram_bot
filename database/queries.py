@@ -41,8 +41,7 @@ get_user_info = f"""
         username,
         first_name,
         last_name,
-        email,
-        subscribe
+        email
     FROM `{USERS_INFO_TABLE_PATH}`
     WHERE user_id == $user_id;
 """
