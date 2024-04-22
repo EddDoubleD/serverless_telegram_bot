@@ -11,13 +11,28 @@ def handle_start(message, bot, pool):
     user = db_model.get_user_info(pool, message.from_user.id)
     if not user:
         save_primary(pool, message)
-        bot.set_state(
-            message.from_user.id,
-            states.GlobalState.guest,
-            message.chat.id
+        bot.send_message(
+            message.chat.id,
+            texts.HELLO,
+            reply_markup=keyboards.EMPTY
         )
 
-    bot.send_message(message.chat.id, texts.HELLO, reply_markup=keyboards.EMPTY)
+        bot.send_message(
+            message.chat.id,
+            texts.INTRODUCE_YOURSELF,
+            reply_markup=keyboards.EMPTY
+        )
+
+        bot.set_state(
+            message.from_user.id, states.RegisterState.request_name, message.chat.id
+        )
+        return
+
+    bot.send_message(
+        message.chat.id,
+        texts.HELLO,
+        reply_markup=keyboards.EMPTY
+    )
 
 
 @logged_execution
@@ -129,8 +144,8 @@ def handle_register_validate(message, bot, pool):
         return
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        exp = data["INTRODUCE_YOUR_EXP"]
-        description = data["INTRODUCE_YOURSELF"]
+        exp = data["EXP"]
+        description = data["DESCRIPTION"]
 
     db_model.upsert_user_info(
         pool,
@@ -146,7 +161,7 @@ def handle_register_validate(message, bot, pool):
     )
 
     bot.set_state(
-        message.from_user.id, states.RegisterState.registered, message.chat.id
+        message.from_user.id, states.GlobalState.guest, message.chat.id
     )
 
 

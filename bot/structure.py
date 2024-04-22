@@ -18,10 +18,6 @@ def get_start_handlers():
             callback=handlers.handle_start, commands=["start"]
         ),  # -> description
         Handler(
-            callback=handlers.handle_register_introduce_yourself,
-            state=[bot_states.GlobalState.guest]
-        ),  # -> exp
-        Handler(
             callback=handlers.handle_register_exp,
             state=[bot_states.RegisterState.request_name]
         ),  # -> subscribe
@@ -30,7 +26,7 @@ def get_start_handlers():
             state=[bot_states.RegisterState.request_exp]
         ),  # -> mail or register
         Handler(
-            callback=handlers.handle_register_email,
+            callback=handlers.handle_register_validate,
             state=[bot_states.RegisterState.request_sub]
         )  # -> register
     ]
@@ -41,7 +37,7 @@ def get_prize_handlers():
         Handler(
             callback=handlers.handle_prize,
             commands=["prize"],
-            state=[bot_states.RegisterState.registered]
+            state=[bot_states.GlobalState.guest]
         )
     ]
 

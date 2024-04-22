@@ -10,9 +10,12 @@ def _format_kwargs(kwargs):
 def execute_update_query(pool, query, **kwargs):
     def callee(session):
         prepared_query = session.prepare(query)
-        session.transaction(ydb.SerializableReadWrite()).execute(
-            prepared_query, _format_kwargs(kwargs), commit_tx=True
-        )
+        session.transaction(ydb.SerializableReadWrite())\
+            .execute(
+                prepared_query,
+                _format_kwargs(kwargs),
+                commit_tx=True
+            )
 
     return pool.retry_operation_sync(callee)
 
