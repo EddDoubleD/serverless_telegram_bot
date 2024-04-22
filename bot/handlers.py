@@ -109,7 +109,7 @@ def handle_register_email(message, bot, pool):
         )
 
         bot.set_state(
-            message.from_user.id, states.RegisterState.registered, message.chat.id
+            message.from_user.id, states.GlobalState.guest, message.chat.id
         )
         return
 
@@ -120,7 +120,7 @@ def handle_register_email(message, bot, pool):
     )
 
     bot.set_state(
-        message.from_user.id, states.RegisterState.email, message.chat.id
+        message.from_user.id, states.RegisterState.request_email, message.chat.id
     )
 
 

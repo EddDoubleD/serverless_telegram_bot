@@ -26,8 +26,12 @@ def get_start_handlers():
             state=[bot_states.RegisterState.request_exp]
         ),  # -> mail or register
         Handler(
-            callback=handlers.handle_register_validate,
+            callback=handlers.handle_register_email,
             state=[bot_states.RegisterState.request_sub]
+        ),
+        Handler(
+            callback=handlers.handle_register_validate,
+            state=[bot_states.RegisterState.request_email]
         )  # -> register
     ]
 
