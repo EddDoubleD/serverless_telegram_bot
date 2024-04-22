@@ -46,6 +46,8 @@ STAND_INFO = (
     "Тут будет информация о стенде и возможно карта"
 )
 
+BASE_OPTIONS = {"Участвовать": "", "Команда": "", "Стенд": ""}
+
 GUEST = 'guest'
 EMAIL = 'email'
 SUBSCRIBE = 'subscribe'

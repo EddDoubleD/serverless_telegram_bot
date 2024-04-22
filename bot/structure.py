@@ -39,9 +39,29 @@ def get_start_handlers():
 def get_prize_handlers():
     return [
         Handler(
-            callback=handlers.handle_prize,
-            commands=["prize"],
+            callback=handlers.handle_base_flow,
             state=[bot_states.GlobalState.guest]
+        )
+    ]
+
+
+def get_info_handlers():
+    return [
+        Handler(
+            callback=handlers.handle_about_info,
+            commands=["team"],
+            state=[
+                bot_states.GlobalState.guest,
+                bot_states.GlobalState.participate
+            ]
+        ),
+        Handler(
+            callback=handlers.handle_stand_info,
+            commands=["info"],
+            state=[
+                bot_states.GlobalState.guest,
+                bot_states.GlobalState.participate
+            ]
         )
     ]
 
@@ -75,13 +95,6 @@ def get_delete_account_handlers():
             callback=handlers.handle_finish_delete_account,
             state=bot_states.DeleteAccountState.are_you_sure,
         ),
-    ]
-
-
-def get_info_handlers():
-    return [
-        Handler(callback=handlers.handle_about_info, commands=["about"]),
-        Handler(callback=handlers.handle_stand_info, commands=["stand"])
     ]
 
 

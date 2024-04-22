@@ -105,7 +105,7 @@ def handle_register_email(message, bot, pool):
         bot.send_message(
             message.chat.id,
             texts.FINISH_REGISTRATION,
-            reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
+            reply_markup=keyboards.EMPTY
         )
 
         bot.set_state(
@@ -166,7 +166,55 @@ def handle_register_validate(message, bot, pool):
 
 
 @logged_execution
+def handle_base_flow(message, bot, pool):
+    if message.text in texts.BASE_OPTIONS:
+        command = texts.BASE_OPTIONS[message.text]
+        if command == 'prize':
+            bot.send_message(
+                message.chat.id,
+                texts.PARTICIPATE,
+                reply_markup=keyboards.get_reply_keyboard(
+                    ["Участвовать", "Команда", "Стенд"]
+                )
+            )
+            bot.set_state(
+                message.from_user.id,
+                states.GlobalState.participate,
+                message.chat.id
+            )
+
+    state = db_model.get_state(pool, message.from_user.id)
+    if state == states.GlobalState.participate:
+        bot.send_message(
+            message.chat.id,
+            texts.PARTICIPATE,
+            reply_markup=keyboards.get_reply_keyboard(
+                ["Команда", "Стенд"]
+            )
+        )
+
+        return
+
+    bot.send_message(
+        message.chat.id,
+        texts.PARTICIPATE,
+        reply_markup=keyboards.get_reply_keyboard(
+            ["Участвовать", "Команда", "Стенд"]
+        )
+    )
+
+
+@logged_execution
 def handle_prize(message, bot, pool):
+    state = db_model.get_state(pool, message.from_user.id)
+    if state == states.RegisterState.guest:
+        bot.send_message(
+            message.chat.id,
+            "Вы уже участвуете в розыгрыше",
+            reply_markup=keyboards.EMPTY,
+        )
+        return
+
     bot.send_message(
         message.chat.id,
         texts.PARTICIPATE,
