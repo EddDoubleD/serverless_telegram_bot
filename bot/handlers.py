@@ -9,18 +9,159 @@ from user_interaction import texts
 @logged_execution
 def handle_start(message, bot, pool):
     user = db_model.get_user_info(pool, message.from_user.id)
-    # user
-    if user:
-        bot.send_message(message.chat.id, texts.HELLO, reply_markup=keyboards.EMPTY)
-    else:
+    if not user:
         save_primary(pool, message)
         bot.set_state(
             message.from_user.id,
-            states.RegisterState.guest,
+            states.GlobalState.guest,
             message.chat.id
         )
 
-        bot.send_message(message.chat.id, texts.HELLO, reply_markup=keyboards.EMPTY)
+    bot.send_message(message.chat.id, texts.HELLO, reply_markup=keyboards.EMPTY)
+
+
+@logged_execution
+def handle_register_introduce_yourself(message, bot, pool):
+    bot.send_message(
+        message.chat.id,
+        texts.INTRODUCE_YOURSELF,
+        reply_markup=keyboards.EMPTY
+    )
+    bot.set_state(
+        message.from_user.id, states.RegisterState.request_name, message.chat.id
+    )
+
+
+@logged_execution
+def handle_register_exp(message, bot, pool):
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["DESCRIPTION"] = message.text
+
+    bot.send_message(
+        message.chat.id,
+        texts.INTRODUCE_YOUR_EXP,
+        reply_markup=keyboards.EMPTY
+    )
+
+    bot.set_state(
+        message.from_user.id, states.RegisterState.request_exp, message.chat.id
+    )
+
+
+@logged_execution
+def handle_register_subscribe(message, bot, pool):
+    if not message.text.isdigit():
+        bot.send_message(
+            message.chat.id,
+            texts.INTRODUCE_YOUR_EXP,
+            reply_markup=keyboards.EMPTY,
+        )
+        return
+
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["EXP"] = int(message.text)
+
+    bot.send_message(
+        message.chat.id,
+        texts.SUBSCRIBE_MSG,
+        reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
+    )
+
+    bot.set_state(
+        message.from_user.id, states.RegisterState.request_sub, message.chat.id
+    )
+
+
+@logged_execution
+def handle_register_email(message, bot, pool):
+    if message.text not in texts.YES_NO_OPTIONS or not texts.YES_NO_OPTIONS[message.text]:
+        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+            exp = data["EXP"]
+            description = data["DESCRIPTION"]
+
+        db_model.upsert_user_info(
+            pool,
+            user_id=message.from_user.id,
+            description=description,
+            email="",
+            exp=exp
+        )
+
+        bot.send_message(
+            message.chat.id,
+            texts.FINISH_REGISTRATION,
+            reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
+        )
+
+        bot.set_state(
+            message.from_user.id, states.RegisterState.registered, message.chat.id
+        )
+        return
+
+    bot.send_message(
+        message.chat.id,
+        texts.INTRODUCE_MAIL,
+        reply_markup=keyboards.EMPTY
+    )
+
+    bot.set_state(
+        message.from_user.id, states.RegisterState.email, message.chat.id
+    )
+
+
+@logged_execution
+def handle_register_validate(message, bot, pool):
+    valid = validate(
+        email_address=message.text,
+        check_format=True,
+        check_blacklist=True,
+        check_dns=True,
+        dns_timeout=10,
+        check_smtp=False,
+        smtp_debug=False
+    )
+    if not valid:
+        bot.send_message(
+            message.chat.id,
+            texts.INVALID_EMAIL,
+            reply_markup=keyboards.EMPTY,
+        )
+        return
+
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        exp = data["INTRODUCE_YOUR_EXP"]
+        description = data["INTRODUCE_YOURSELF"]
+
+    db_model.upsert_user_info(
+        pool,
+        user_id=message.from_user.id,
+        description=description,
+        email=message.text,
+        exp=exp
+    )
+    bot.send_message(
+        message.chat.id,
+        texts.FINISH_REGISTRATION,
+        reply_markup=keyboards.EMPTY,
+    )
+
+    bot.set_state(
+        message.from_user.id, states.RegisterState.registered, message.chat.id
+    )
+
+
+@logged_execution
+def handle_prize(message, bot, pool):
+    bot.send_message(
+        message.chat.id,
+        texts.PARTICIPATE,
+        reply_markup=keyboards.EMPTY,
+    )
+    bot.set_state(
+        message.from_user.id,
+        states.GlobalState.participate,
+        message.chat.id
+    )
 
 
 @logged_execution
@@ -227,13 +368,14 @@ def handle_admin_help(message, bot, pool):
         return
 
     bot.send_message(
-            message.chat.id,
-            f'''/admin_roulette - розыгрыш
+        message.chat.id,
+        f'''/admin_roulette - розыгрыш
                 /admin_gift <login> - отправка приза
                 /admin_send_message <login> <message> - отправить сообщение от имени бота
             ''',
-            reply_markup=keyboards.EMPTY,
+        reply_markup=keyboards.EMPTY,
     )
+
 
 @logged_execution
 def handle_admin_roulette(message, bot, pool):
@@ -243,10 +385,11 @@ def handle_admin_roulette(message, bot, pool):
     current_data = db_model.get_random_user(pool)
 
     bot.send_message(
-            message.chat.id,
-            f'Победил @{current_data["username"]} чтобы отправить победителю подарок напиши сообщение /admin_gift <login>',
-            reply_markup=keyboards.EMPTY,
+        message.chat.id,
+        f'Победил @{current_data["username"]} чтобы отправить победителю подарок напиши сообщение /admin_gift <login>',
+        reply_markup=keyboards.EMPTY,
     )
+
 
 @logged_execution
 def handle_admin_gift(message, bot, pool):
@@ -269,10 +412,11 @@ def handle_admin_gift(message, bot, pool):
             reply_markup=keyboards.EMPTY,
         )
 
+
 @logged_execution
 def handle_admin_send_message(message, bot, pool):
     if message.from_user.username not in texts.ADMINS:
-            return
+        return
 
     login, text = message.text[len('/admin_send_message '):].split(" ", 1)
     current_data = db_model.get_user_info_by_username(pool, login)

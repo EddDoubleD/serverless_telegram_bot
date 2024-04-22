@@ -5,6 +5,8 @@
     `username` Utf8,
     `last_name` Utf8,
     `first_name` Utf8,
+    `description` Utf8,
+    `exp` Int16,
     `email` Utf8,
     `subscribe` Bool,
     `registration_date` Datetime,

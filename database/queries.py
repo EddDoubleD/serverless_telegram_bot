@@ -1,7 +1,6 @@
 USERS_INFO_TABLE_PATH = "user_personal_info"
 STATES_TABLE_PATH = "states"
 
-
 get_user_state = f"""
     DECLARE $user_id AS Uint64;
 
@@ -78,6 +77,17 @@ add_primary_user_info = f"""
     `registration_date`) VALUES ($user_id, $chat_id, $username, $first_name, $last_name, $now);
 """
 
+upsert_user_info = f"""
+    DECLARE $user_id AS Uint64;
+    DECLARE $description AS Utf8;
+    DECLARE $email AS Utf8;
+    DECLARE $exp AS Int16;
+    
+
+    UPSERT INTO `{USERS_INFO_TABLE_PATH}` (`user_id`, `description`, `exp`, `email`)
+    VALUES ($user_id, $description, $exp, $email);
+"""
+
 delete_user_info = f"""
     DECLARE $user_id AS Uint64;
 
@@ -87,7 +97,6 @@ delete_user_info = f"""
     DELETE FROM `{STATES_TABLE_PATH}`
     WHERE user_id == $user_id;
 """
-
 
 get_random_user = f"""
     SELECT `{USERS_INFO_TABLE_PATH}`.*, Random(username) as random

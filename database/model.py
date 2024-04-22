@@ -73,6 +73,17 @@ def upsert_user_subscribe(pool, user_id, subscribe):
     )
 
 
+def upsert_user_info(pool, user_id, description, email, exp):
+    execute_update_query(
+        pool,
+        queries.upsert_user_info,
+        user_id=user_id,
+        description=description,
+        email=email,
+        exp=exp
+    )
+
+
 def get_user_info(pool, user_id):
     result = execute_select_query(pool, queries.get_user_info, user_id=user_id)
 
@@ -86,11 +97,12 @@ def delete_user_info(pool, user_id):
 
 
 def get_random_user(pool):
-     result = execute_select_query(pool, queries.get_random_user)
+    result = execute_select_query(pool, queries.get_random_user)
 
-     if len(result) != 1:
-         return None
-     return result[0]
+    if len(result) != 1:
+        return None
+    return result[0]
+
 
 def get_user_info_by_username(pool, username):
     result = execute_select_query(pool, queries.get_user_info_by_username, username=username)

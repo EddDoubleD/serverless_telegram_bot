@@ -85,8 +85,18 @@ class StateYDBStorage(StateStorageBase):
             return True
 
 
+class GlobalState(StatesGroup):
+    guest = State()
+    registered = State()
+    participate = State()
+
+
 class RegisterState(StatesGroup):
     guest = State()
+    request_name = State()
+    request_exp = State()
+    request_sub = State()
+    request_email = State()
     email = State()
     subscribe = State()
     registered = State()
