@@ -80,7 +80,7 @@ upsert_user_info = f"""
     DECLARE $user_id AS Uint64;
     DECLARE $description AS Utf8;
     DECLARE $email AS Utf8;
-    DECLARE $exp AS Int16;
+    DECLARE $exp AS Float;
     
 
     UPSERT INTO `{USERS_INFO_TABLE_PATH}` (`user_id`, `description`, `exp`, `email`)

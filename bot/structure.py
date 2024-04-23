@@ -48,28 +48,7 @@ def get_prize_handlers():
         ),
         Handler(
             callback=handlers.handle_participate_user,
-            state=[bot_states.GlobalState.participate,]
-        )
-    ]
-
-
-def get_info_handlers():
-    return [
-        Handler(
-            callback=handlers.handle_about_info,
-            commands=["team"],
-            state=[
-                bot_states.GlobalState.guest,
-                bot_states.GlobalState.participate
-            ]
-        ),
-        Handler(
-            callback=handlers.handle_stand_info,
-            commands=["info"],
-            state=[
-                bot_states.GlobalState.guest,
-                bot_states.GlobalState.participate
-            ]
+            state=[bot_states.GlobalState.participate]
         )
     ]
 
@@ -90,7 +69,6 @@ def create_bot(bot_token, pool):
     handlers = []
     handlers.extend(get_start_handlers())
     handlers.extend(get_prize_handlers())
-    handlers.extend(get_info_handlers())
     handlers.extend(get_admin_handlers())
 
     for handler in handlers:

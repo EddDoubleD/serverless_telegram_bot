@@ -1,4 +1,7 @@
+import re
+
 from email_validate import validate
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot import keyboards, states
 from database import model as db_model
@@ -23,12 +26,60 @@ def handle_start(message, bot, pool):
         )
         return
 
-    bot.send_message(
-        message.chat.id,
-        texts.HELLO,
-        reply_markup=keyboards.EMPTY,
-        parse_mode="Markdown"
-    )
+    # routing
+    state = db_model.get_state(pool, message.from_user.id)
+    if state is None:
+        bot.set_state(
+            message.from_user.id, states.RegisterState.request_interest, message.chat.id
+        )
+        return
+
+    if state['state'] == 'RegisterState:request_interest':
+        bot.send_message(
+            message.chat.id,
+            texts.HELLO,
+            reply_markup=keyboards.get_reply_keyboard(["Интересно!"]),
+            parse_mode="Markdown"
+        )
+    elif state['state'] == 'RegisterState:request_name':
+        bot.send_message(
+            message.chat.id,
+            texts.INTRODUCE_YOURSELF,
+            reply_markup=keyboards.EMPTY
+        )
+    elif state['state'] == 'RegisterState:request_exp':
+        bot.send_message(
+            message.chat.id,
+            texts.INTRODUCE_YOUR_EXP,
+            reply_markup=keyboards.EMPTY
+        )
+    elif state['state'] == 'RegisterState:request_sub':
+        bot.send_message(
+            message.chat.id,
+            texts.INTRODUCE_SUBSCRIBE,
+            reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
+            parse_mode="Markdown"
+        )
+    elif state['state'] == 'RegisterState:request_email':
+        bot.send_message(
+            message.chat.id,
+            texts.INTRODUCE_MAIL,
+            reply_markup=keyboards.EMPTY
+        )
+    elif state['state'] == 'GlobalState:guest':
+        bot.send_message(
+            message.chat.id,
+            texts.FINISH_REGISTRATION,
+            reply_markup=keyboards.get_reply_keyboard(["Участвую", "Команда", "Стенд"])
+        )
+    elif state['state'] == 'GlobalState:participate':
+        bot.send_message(
+            message.chat.id,
+            texts.ALREADY_PARTICIPATE,
+            reply_markup=keyboards.get_reply_keyboard(
+                ["Команда", "Стенд"]
+            )
+        )
 
 
 @logged_execution
@@ -43,18 +94,6 @@ def handle_register_interest(message, bot, pool):
         bot.set_state(
             message.from_user.id, states.RegisterState.request_name, message.chat.id
         )
-
-
-@logged_execution
-def handle_register_introduce_yourself(message, bot, pool):
-    bot.send_message(
-        message.chat.id,
-        texts.INTRODUCE_YOURSELF,
-        reply_markup=keyboards.EMPTY
-    )
-    bot.set_state(
-        message.from_user.id, states.RegisterState.request_name, message.chat.id
-    )
 
 
 @logged_execution
@@ -75,16 +114,17 @@ def handle_register_exp(message, bot, pool):
 
 @logged_execution
 def handle_register_subscribe(message, bot, pool):
-    if not message.text.isdigit():
+    exp = message.text
+    if not is_number(exp):
         bot.send_message(
             message.chat.id,
-            texts.INTRODUCE_YOUR_EXP,
+            texts.INVALID_EXP,
             reply_markup=keyboards.EMPTY,
         )
         return
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["EXP"] = int(message.text)
+        data["EXP"] = float(message.text)
 
     bot.send_message(
         message.chat.id,
@@ -116,7 +156,7 @@ def handle_register_email(message, bot, pool):
         bot.send_message(
             message.chat.id,
             texts.FINISH_REGISTRATION,
-            reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
+            reply_markup=keyboards.get_reply_keyboard(["Участвую", "Команда", "Стенд"])
         )
 
         bot.set_state(
@@ -168,7 +208,7 @@ def handle_register_validate(message, bot, pool):
     bot.send_message(
         message.chat.id,
         texts.FINISH_REGISTRATION,
-        reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
+        reply_markup=keyboards.get_reply_keyboard(["Участвую", "Команда", "Стенд"])
     )
 
     bot.set_state(
@@ -194,22 +234,32 @@ def handle_base_flow(message, bot, pool):
                 message.chat.id
             )
         elif command == 'team':
+            markup = InlineKeyboardMarkup()
+            btn_my_site = InlineKeyboardButton(text=texts.ABOUT_INFO_2_BTN, url=texts.ABOUT_INFO_LINK)
+            markup.add(btn_my_site)
+            bot.send_photo(
+                message.chat.id,
+                photo="https://storage.yandexcloud.net/ya360/team.png",
+                caption=texts.ABOUT_INFO,
+                reply_markup=markup
+            )
+
             bot.send_message(
                 message.chat.id,
-                texts.ABOUT_INFO,
-                reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
+                texts.WELCOME,
+                reply_markup=keyboards.get_reply_keyboard(["Участвую", "Команда", "Стенд"])
             )
         elif command == 'info':
             bot.send_message(
                 message.chat.id,
                 texts.STAND_INFO,
-                reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
+                reply_markup=keyboards.get_reply_keyboard(["Участвую", "Команда", "Стенд"])
             )
         else:
             bot.send_message(
                 message.chat.id,
                 "Я тебя не понимаю :(",
-                reply_markup=keyboards.get_reply_keyboard(["Участвовать", "Команда", "Стенд"])
+                reply_markup=keyboards.get_reply_keyboard(["Участвую", "Команда", "Стенд"])
             )
 
 
@@ -218,9 +268,19 @@ def handle_participate_user(message, bot, pool):
     if message.text in texts.BASE_OPTIONS:
         command = texts.BASE_OPTIONS[message.text]
         if command == 'team':
+            markup = InlineKeyboardMarkup()
+            btn_my_site = InlineKeyboardButton(text=texts.ABOUT_INFO_2_BTN, url=texts.ABOUT_INFO_LINK)
+            markup.add(btn_my_site)
+            bot.send_photo(
+                message.chat.id,
+                photo="https://storage.yandexcloud.net/ya360/team.png",
+                caption=texts.ABOUT_INFO,
+                reply_markup=markup
+            )
+
             bot.send_message(
                 message.chat.id,
-                texts.ABOUT_INFO,
+                texts.WELCOME,
                 reply_markup=keyboards.get_reply_keyboard(["Команда", "Стенд"])
             )
         elif command == 'info':
@@ -231,223 +291,28 @@ def handle_participate_user(message, bot, pool):
             )
 
 
-@logged_execution
-def handle_prize(message, bot, pool):
-    state = db_model.get_state(pool, message.from_user.id)
-    if state == states.RegisterState.guest:
-        bot.send_message(
-            message.chat.id,
-            "Вы уже участвуете в розыгрыше",
-            reply_markup=keyboards.EMPTY,
-        )
-        return
-
-    bot.send_message(
-        message.chat.id,
-        texts.PARTICIPATE,
-        reply_markup=keyboards.EMPTY,
-    )
-    bot.set_state(
-        message.from_user.id,
-        states.GlobalState.participate,
-        message.chat.id
-    )
-
-
-@logged_execution
-def handle_start_register(message, bot, pool):
-    state = db_model.get_state(pool, message.from_user.id)
-    if state == states.RegisterState.guest:
-        bot.send_message(message.chat.id, 'Вы уже зерегистрированы', reply_markup=keyboards.EMPTY)
-        return
-    elif state is None:
-        save_primary(pool, message)
-
-    bot.send_message(
-        message.chat.id,
-        texts.EMAIL_MSG,
-        reply_markup=keyboards.get_reply_keyboard(["/cancel"]),
-        # reply_markup=keyboards.EMPTY,
-    )
-
-    bot.set_state(
-        message.from_user.id, states.RegisterState.email, message.chat.id
-    )
-
-
 def save_primary(pool, message):
+    first_name = message.from_user.first_name
+    if first_name is None:
+        first_name = ""
+    last_name = message.from_user.last_name
+    if last_name is None:
+        last_name = ""
+
     db_model.add_primary_user_info(
         pool,
         message.from_user.id,
         message.chat.id,
         message.from_user.username,
-        message.from_user.first_name,
-        message.from_user.last_name,
+        first_name,
+        last_name
     )
 
 
-@logged_execution
-def handle_email(message, bot, pool):
-    valid = validate(
-        email_address=message.text,
-        check_format=True,
-        check_blacklist=True,
-        check_dns=True,
-        dns_timeout=10,
-        check_smtp=False,
-        smtp_debug=False
-    )
-
-    if not valid:
-        bot.send_message(
-            message.chat.id,
-            texts.INVALID_EMAIL,
-            reply_markup=keyboards.EMPTY,
-        )
-        return
-
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data["email"] = message.text
-
-    bot.send_message(
-        message.chat.id,
-        texts.SUBSCRIBE_MSG,
-        reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
-    )
-    bot.set_state(
-        message.from_user.id, states.RegisterState.subscribe, message.chat.id
-    )
-
-
-@logged_execution
-def handle_finish_register(message, bot, pool):
-    if message.text not in texts.YES_NO_OPTIONS:
-        bot.send_message(
-            message.chat.id,
-            texts.DELETE_ACCOUNT_UNKNOWN,
-            reply_markup=keyboards.EMPTY,
-        )
-        return
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        email = data["email"]
-
-    db_model.upsert_user_email(
-        pool,
-        user_id=message.from_user.id,
-        email=email
-    )
-
-    subscribe = texts.YES_NO_OPTIONS[message.text]
-
-    # save subscriber status
-    db_model.upsert_user_subscribe(
-        pool=pool,
-        user_id=message.from_user.id,
-        subscribe=subscribe
-    )
-
-    bot.send_message(
-        message.chat.id,
-        texts.FINISH_REGISTRATION,
-        reply_markup=keyboards.EMPTY,
-    )
-
-    bot.set_state(
-        message.from_user.id, states.RegisterState.registered, message.chat.id
-    )
-
-
-@logged_execution
-def handle_cancel_registration(message, bot, pool):
-    bot.set_state(message.from_user.id, states.RegisterState.guest, message.chat.id)
-    bot.send_message(
-        message.chat.id,
-        texts.CANCEL_REGISTER,
-        reply_markup=keyboards.EMPTY,
-    )
-
-
-@logged_execution
-def handle_show_data(message, bot, pool):
-    current_data = db_model.get_user_info(pool, message.from_user.id)
-
-    if not current_data:
-        bot.send_message(
-            message.chat.id, texts.NOT_REGISTERED, reply_markup=keyboards.EMPTY
-        )
-        return
-
-    bot.send_message(
-        message.chat.id,
-        texts.SHOW_DATA_WITH_PREFIX.format(
-            current_data["first_name"], current_data["last_name"]
-        ),
-        reply_markup=keyboards.EMPTY,
-    )
-
-
-@logged_execution
-def handle_delete_account(message, bot, pool):
-    current_data = db_model.get_user_info(pool, message.from_user.id)
-    if not current_data:
-        bot.send_message(
-            message.chat.id, texts.NOT_REGISTERED, reply_markup=keyboards.EMPTY
-        )
-        return
-
-    bot.send_message(
-        message.chat.id,
-        texts.DELETE_ACCOUNT,
-        reply_markup=keyboards.get_reply_keyboard(texts.YES_NO_OPTIONS),
-    )
-    bot.set_state(
-        message.from_user.id, states.DeleteAccountState.are_you_sure, message.chat.id
-    )
-
-
-@logged_execution
-def handle_finish_delete_account(message, bot, pool):
-    bot.delete_state(message.from_user.id, message.chat.id)
-
-    if message.text not in texts.YES_NO_OPTIONS:
-        bot.send_message(
-            message.chat.id,
-            texts.DELETE_ACCOUNT_UNKNOWN,
-            reply_markup=keyboards.EMPTY,
-        )
-        return
-
-    if texts.YES_NO_OPTIONS[message.text]:
-        db_model.delete_user_info(pool, message.from_user.id)
-        bot.send_message(
-            message.chat.id,
-            texts.DELETE_ACCOUNT_DONE,
-            reply_markup=keyboards.EMPTY,
-        )
-    else:
-        bot.send_message(
-            message.chat.id,
-            texts.DELETE_ACCOUNT_CANCEL,
-            reply_markup=keyboards.EMPTY,
-        )
-
-
-@logged_execution
-def handle_about_info(message, bot, pool):
-    bot.send_message(
-        message.chat.id,
-        texts.ABOUT_INFO,
-        reply_markup=keyboards.EMPTY,
-    )
-
-
-@logged_execution
-def handle_stand_info(message, bot, pool):
-    bot.send_message(
-        message.chat.id,
-        texts.STAND_INFO,
-        reply_markup=keyboards.EMPTY,
-    )
+def is_number(s):
+    if re.match('^\d+?\.\d+?$', s) is None:
+        return s.isdigit()
+    return True
 
 
 # ============================================= ADMIN ================================================
