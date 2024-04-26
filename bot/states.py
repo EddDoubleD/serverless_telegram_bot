@@ -85,13 +85,19 @@ class StateYDBStorage(StateStorageBase):
             return True
 
 
-class RegisterState(StatesGroup):
+class GlobalState(StatesGroup):
     guest = State()
-    email = State()
-    subscribe = State()
     registered = State()
-    winner = State()
+    participate = State()
 
 
-class DeleteAccountState(StatesGroup):
-    are_you_sure = State()
+class RegisterState(StatesGroup):
+    request_interest = State()
+    request_name = State()
+    request_exp = State()
+    request_sub = State()
+    request_email = State()
+
+
+class AccountState(StatesGroup):
+    god = State()
