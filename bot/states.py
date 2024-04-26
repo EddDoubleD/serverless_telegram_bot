@@ -93,16 +93,11 @@ class GlobalState(StatesGroup):
 
 class RegisterState(StatesGroup):
     request_interest = State()
-    guest = State()
     request_name = State()
     request_exp = State()
     request_sub = State()
     request_email = State()
-    email = State()
-    subscribe = State()
-    registered = State()
-    winner = State()
 
 
-class DeleteAccountState(StatesGroup):
-    are_you_sure = State()
+class AccountState(StatesGroup):
+    god = State()

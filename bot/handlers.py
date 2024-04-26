@@ -80,6 +80,18 @@ def handle_start(message, bot, pool):
                 ["Команда", "Стенд"]
             )
         )
+    elif state['state'] == 'AccountState:god':
+        bot.send_message(
+            message.chat.id,
+            f"""
+            Привет создатель!\n
+            /admin_roulette - розыгрыш\n
+            /admin_gift <login> - отправка приза\n
+            /admin_send_message <login> <message> - отправить сообщение от имени бота
+            """,
+            reply_markup=keyboards.EMPTY,
+            parse_mode="Markdown"
+        )
 
 
 @logged_execution
